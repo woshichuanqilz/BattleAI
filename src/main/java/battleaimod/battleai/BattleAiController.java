@@ -1,9 +1,9 @@
 package battleaimod.battleai;
 
-import FightPredictor.FightPredictor;
-import FightPredictor.ml.ModelUtils;
-import FightPredictor.patches.com.megacrit.cardcrawl.combat.CombatPredictionPatches;
-import FightPredictor.util.BaseGameConstants;
+//import FightPredictor.FightPredictor;
+//import FightPredictor.ml.ModelUtils;
+//import FightPredictor.patches.com.megacrit.cardcrawl.combat.CombatPredictionPatches;
+//import FightPredictor.util.BaseGameConstants;
 import basemod.BaseMod;
 import battleaimod.ValueFunctions;
 import com.badlogic.gdx.math.MathUtils;
@@ -77,89 +77,76 @@ public class BattleAiController implements Controller {
 
         System.err.println("loading state from constructor");
         startingState.loadState();
-
-        if (BaseMod.hasModID("FightPredictor:")) {
-            try {
-                float prediction = FightPredictor.model.predict(ModelUtils.getBaseInputVector());
-                expectedDamage = MathUtils.round(prediction * 100);
-            } catch (Exception e) {
-                // This can happen either because the model doesn't support something or the mod isn't
-                // installed
-            }
-
-            runPredictions();
-        }
-
         this.maxTurnLoads = maxTurnLoads;
     }
 
-    public void runPredictions() {
-        float prediction = FightPredictor.model.predict(ModelUtils.getBaseInputVector());
-        float intPrediction = Math.round(prediction * 100);
-        CombatPredictionPatches.combatStartingHP = AbstractDungeon.player.currentHealth;
-        CombatPredictionPatches.combatHPLossPrediction = MathUtils.round(prediction * 100);
-
-        // Set up and do all card copying here
-        // Only use thread safe things inside the other thread (maybe convert as much stuff to strings as possible)
-        // That might mean overloading other methods from other classes to take strings, since they use them under
-        // the hood anyways
-
-        long start = System.currentTimeMillis();
-
-        // Get the character's card pool
-        ArrayList<AbstractCard> unupgradedCards = new ArrayList<>();
-        switch (AbstractDungeon.player.chosenClass) {
-            case IRONCLAD:
-                CardLibrary.addRedCards(unupgradedCards);
-                break;
-            case THE_SILENT:
-                CardLibrary.addGreenCards(unupgradedCards);
-                break;
-            case DEFECT:
-                CardLibrary.addBlueCards(unupgradedCards);
-                break;
-            case WATCHER:
-                CardLibrary.addPurpleCards(unupgradedCards);
-                break;
-            default:
-                return;
-        }
-
-        // Make copies of cards to protect from concurency problems
-        // Add the upgraded cards to the pool
-        List<AbstractCard> cardPool = unupgradedCards.stream().map(AbstractCard::makeCopy)
-                                                     .collect(Collectors.toList());
-        List<AbstractCard> upgradedPool = cardPool.stream().map(AbstractCard::makeCopy)
-                                                  .collect(Collectors.toList());
-        upgradedPool.forEach(AbstractCard::upgrade);
-        cardPool.addAll(upgradedPool);
-
-        List<AbstractCard> playerCards = new ArrayList<>(AbstractDungeon.player.masterDeck.group)
-                .stream().map(AbstractCard::makeCopy).collect(Collectors.toList());
-        List<AbstractRelic> playerRelics = new ArrayList<>(AbstractDungeon.player.relics).stream()
-                                                                                         .map(AbstractRelic::makeCopy)
-                                                                                         .collect(Collectors
-                                                                                                 .toList());
-        int startingHealth = AbstractDungeon.player.currentHealth;
-        int maxHealth = AbstractDungeon.player.maxHealth;
-
-        // Get the enemies to predict against
-        Set<String> elitesAndBosses = new HashSet<>();
-        elitesAndBosses.addAll(BaseGameConstants.eliteIDs.get(AbstractDungeon.actNum));
-        elitesAndBosses.add(AbstractDungeon.bossKey);
-        if (AbstractDungeon.actNum < 4) {
-            elitesAndBosses
-                    .addAll(BaseGameConstants.elitesAndBossesByAct.get(AbstractDungeon.actNum + 1));
-        }
-        long end = System.currentTimeMillis();
-
-        new Thread(() -> {
-            FightPredictor
-                    .getPercentiles(cardPool, playerCards, playerRelics, startingHealth, maxHealth, elitesAndBosses);
-
-            System.err.println(" predictions " + FightPredictor.percentiles.entrySet());
-        }).start();
-    }
+//    public void runPredictions() {
+////        float prediction = FightPredictor.model.predict(ModelUtils.getBaseInputVector());
+////        float intPrediction = Math.round(prediction * 100);
+////        CombatPredictionPatches.combatStartingHP = AbstractDungeon.player.currentHealth;
+////        CombatPredictionPatches.combatHPLossPrediction = MathUtils.round(prediction * 100);
+//
+//        // Set up and do all card copying here
+//        // Only use thread safe things inside the other thread (maybe convert as much stuff to strings as possible)
+//        // That might mean overloading other methods from other classes to take strings, since they use them under
+//        // the hood anyways
+//
+//        long start = System.currentTimeMillis();
+//
+//        // Get the character's card pool
+//        ArrayList<AbstractCard> unupgradedCards = new ArrayList<>();
+//        switch (AbstractDungeon.player.chosenClass) {
+//            case IRONCLAD:
+//                CardLibrary.addRedCards(unupgradedCards);
+//                break;
+//            case THE_SILENT:
+//                CardLibrary.addGreenCards(unupgradedCards);
+//                break;
+//            case DEFECT:
+//                CardLibrary.addBlueCards(unupgradedCards);
+//                break;
+//            case WATCHER:
+//                CardLibrary.addPurpleCards(unupgradedCards);
+//                break;
+//            default:
+//                return;
+//        }
+//
+//        // Make copies of cards to protect from concurency problems
+//        // Add the upgraded cards to the pool
+//        List<AbstractCard> cardPool = unupgradedCards.stream().map(AbstractCard::makeCopy)
+//                                                     .collect(Collectors.toList());
+//        List<AbstractCard> upgradedPool = cardPool.stream().map(AbstractCard::makeCopy)
+//                                                  .collect(Collectors.toList());
+//        upgradedPool.forEach(AbstractCard::upgrade);
+//        cardPool.addAll(upgradedPool);
+//
+//        List<AbstractCard> playerCards = new ArrayList<>(AbstractDungeon.player.masterDeck.group)
+//                .stream().map(AbstractCard::makeCopy).collect(Collectors.toList());
+//        List<AbstractRelic> playerRelics = new ArrayList<>(AbstractDungeon.player.relics).stream()
+//                                                                                         .map(AbstractRelic::makeCopy)
+//                                                                                         .collect(Collectors
+//                                                                                                 .toList());
+//        int startingHealth = AbstractDungeon.player.currentHealth;
+//        int maxHealth = AbstractDungeon.player.maxHealth;
+//
+//        // Get the enemies to predict against
+//        Set<String> elitesAndBosses = new HashSet<>();
+//        elitesAndBosses.addAll(BaseGameConstants.eliteIDs.get(AbstractDungeon.actNum));
+//        elitesAndBosses.add(AbstractDungeon.bossKey);
+//        if (AbstractDungeon.actNum < 4) {
+//            elitesAndBosses
+//                    .addAll(BaseGameConstants.elitesAndBossesByAct.get(AbstractDungeon.actNum + 1));
+//        }
+//        long end = System.currentTimeMillis();
+//
+//        new Thread(() -> {
+//            FightPredictor
+//                    .getPercentiles(cardPool, playerCards, playerRelics, startingHealth, maxHealth, elitesAndBosses);
+//
+//            System.err.println(" predictions " + FightPredictor.percentiles.entrySet());
+//        }).start();
+//    }
 
     public void step() {
         if (isDone) {
