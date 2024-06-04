@@ -19,6 +19,7 @@ import java.nio.file.Paths;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static battleaimod.utils.OriUtils.getEnemyType;
 import static savestate.SaveStateMod.addRuntime;
 
 public class BattleAiController implements Controller {
@@ -83,11 +84,7 @@ public class BattleAiController implements Controller {
     }
 
     public void step() {
-        Path currentDir = Paths.get("");
-
-        // Get the absolute path of the current directory
-        String absolutePath = currentDir.toAbsolutePath().toString();
-        OriUtils.getEnemyTypes();
+        String mtype = getEnemyType();
 
         if (isDone) {
             return;
