@@ -71,6 +71,7 @@ public class ValueFunctions {
                                                     .get();
     }
 
+    // 这个函数没用 一轮的评分是没用的
     public static int calculateTurnScore(TurnNode turnNode) {
         int playerDamage = getPlayerDamage(turnNode);
         int monsterDamage = ValueFunctions
@@ -85,10 +86,8 @@ public class ValueFunctions {
 
 
         boolean shouldBrawl = turnNode.startingState.saveState.curMapNodeState.monsterData.stream()
-                                                                                          .filter(monsterState -> BRAWLY_MONSTER_IDS
-                                                                                                  .contains(monsterState.id))
-                                                                                          .findAny()
-                                                                                          .isPresent();
+                                                                                          .anyMatch(monsterState -> BRAWLY_MONSTER_IDS
+                                                                                                  .contains(monsterState.id));
 
         int numRitualDaggers = 0;
         int totalRitualDaggerDamage = 0;
@@ -183,12 +182,8 @@ public class ValueFunctions {
         }
 
         for (CardState card : turnNode.startingState.saveState.playerState.exhaustPile) {
-            switch (StateFactories.cardIds[card.cardIdIndex]) {
-                case RitualDagger.ID:
-                    totalRitualDaggerDamage += card.baseDamage;
-                    break;
-                default:
-                    break;
+            if (StateFactories.cardIds[card.cardIdIndex].equals(RitualDagger.ID)) {
+                totalRitualDaggerDamage += card.baseDamage;
             }
         }
 
@@ -203,14 +198,12 @@ public class ValueFunctions {
         int healthMultiplier = shouldBrawl ? 2 : 8;
         int numOrbScore = turnNode.startingState.saveState.playerState.maxOrbs == 0 ? -1000 : 0;
 
-        int additonalHeuristicScore =
+        int additionalHeuristicScore =
                 BattleAiMod.additionalValueFunctions.stream()
-                                                    .map(function -> function
-                                                            .apply(turnNode.startingState.saveState))
-                                                    .collect(Collectors
-                                                            .summingInt(Integer::intValue));
+                        .map(function -> function
+                                .apply(turnNode.startingState.saveState)).mapToInt(Integer::intValue).sum();
 
-        return numOrbScore + catalystScore + parasiteScore + lessonLearnedScore + feedScore + conjureBladeScore + turnNode.startingState.saveState.playerState.gold * 2 + ritualDaggerScore + miracleScore + monsterDamage - healthMultiplier * playerDamage + powerScore + getPotionScore(turnNode.startingState.saveState) + getRelicScore(turnNode.startingState.saveState) + additonalHeuristicScore;
+        return numOrbScore + catalystScore + parasiteScore + lessonLearnedScore + feedScore + conjureBladeScore + turnNode.startingState.saveState.playerState.gold * 2 + ritualDaggerScore + miracleScore + monsterDamage - healthMultiplier * playerDamage + powerScore + getPotionScore(turnNode.startingState.saveState) + getRelicScore(turnNode.startingState.saveState) + additionalHeuristicScore;
     }
 
     public static int getPlayerDamage(TurnNode turnNode) {
