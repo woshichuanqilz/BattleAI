@@ -25,7 +25,6 @@ import static savestate.SaveStateMod.addRuntime;
 
 public class BattleAiController implements Controller {
     public static final Logger logger = LogManager.getLogger(StateNode.class.getName());
-    public static int count_test = 0;
 
     private final int maxTurnLoads;
 

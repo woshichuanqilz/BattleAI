@@ -71,7 +71,7 @@ public class ValueFunctions {
                                                     .get();
     }
 
-    public static int caclculateTurnScore(TurnNode turnNode) {
+    public static int calculateTurnScore(TurnNode turnNode) {
         int playerDamage = getPlayerDamage(turnNode);
         int monsterDamage = ValueFunctions
                 .getTotalMonsterHealth(turnNode.controller.startingState) - ValueFunctions

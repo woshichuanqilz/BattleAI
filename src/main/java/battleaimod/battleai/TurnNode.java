@@ -5,7 +5,6 @@ import com.megacrit.cardcrawl.actions.GameActionManager;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import ludicrousspeed.simulator.commands.Command;
 import ludicrousspeed.simulator.commands.EndCommand;
-import org.apache.logging.log4j.Logger;
 import savestate.SaveState;
 
 import java.util.ArrayList;
@@ -51,8 +50,8 @@ public class TurnNode implements Comparable<TurnNode> {
     }
 
     public boolean step() {
-        BattleAiController.count_test += 1;
         if (isDone) {
+            BattleAiController.logger.info("OriCode TurnNode isDone");
             return true;
         }
         BattleAiController.logger.info("OriCode GameTurn " + GameActionManager.turn);
@@ -65,6 +64,7 @@ public class TurnNode implements Comparable<TurnNode> {
 
         if (states.isEmpty()) {
             isDone = true;
+            BattleAiController.logger.info("OriCode states empty isDone");
             return true;
         }
 
@@ -122,6 +122,8 @@ public class TurnNode implements Comparable<TurnNode> {
                     controller.turns.add(toAdd);
                 }
             }
+
+            BattleAiController.logger.info("OriCode new TurnNode created return True");
             return true;
         }
 
@@ -143,6 +145,7 @@ public class TurnNode implements Comparable<TurnNode> {
                     states.peek().saveState.loadState();
                     BattleAiController.logger.info("OriCode curState exeNull and unEmpty loadState");
                 }
+                BattleAiController.logger.info("OriCode curState exeNull return True");
                 return true;
             } else {
                 StateNode toAdd = new StateNode(curState, toExecute, controller);
@@ -189,7 +192,7 @@ public class TurnNode implements Comparable<TurnNode> {
 //            System.err.println("Turn Value " + turnNode.turnLabel + " " + ValueFunctions
 //                    .caclculateTurnScore(turnNode));
 
-            turnNode.cachedValue = Optional.of(ValueFunctions.caclculateTurnScore(turnNode));
+            turnNode.cachedValue = Optional.of(ValueFunctions.calculateTurnScore(turnNode));
         }
         return turnNode.cachedValue.get();
     }
@@ -210,10 +213,6 @@ public class TurnNode implements Comparable<TurnNode> {
 
         addRuntime("Comparing Turns", System.currentTimeMillis() - startCompare);
         addRuntime("Comparing Turns instance", 1);
-
-        if(result == 0) {
-            return otherTurn.turnLabel - this.turnLabel;
-        }
 
         return result;
     }
