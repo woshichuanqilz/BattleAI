@@ -1,0 +1,12 @@
+{
+  "TWO_LOUSES":
+    {
+      "name": "TWO_LOUSES",
+      "count": 2,
+      "match_type": "contain",
+      "monster_list": [
+        "FuzzyLouseNormal",
+        "FuzzyLouseDefensive"
+      ]
+    }
+}

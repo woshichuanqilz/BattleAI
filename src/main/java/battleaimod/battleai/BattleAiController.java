@@ -1,12 +1,8 @@
 package battleaimod.battleai;
 
-import basemod.BaseMod;
 import battleaimod.ValueFunctions;
-import com.badlogic.gdx.math.MathUtils;
-import com.megacrit.cardcrawl.cards.AbstractCard;
-import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
-import com.megacrit.cardcrawl.helpers.CardLibrary;
-import com.megacrit.cardcrawl.relics.AbstractRelic;
+import battleaimod.utils.OriUtils;
+import battleaimod.utils.OriUtils.*;
 import ludicrousspeed.Controller;
 import ludicrousspeed.simulator.commands.Command;
 import savestate.CardState;
@@ -17,6 +13,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -67,6 +65,9 @@ public class BattleAiController implements Controller {
     private long startTime = 0;
     public int expectedDamage = 0;
 
+    // my own
+//    private static final ArrayList<String> MONSTER_TYPE_LIST = getenm;
+
     public BattleAiController(SaveState state, int maxTurnLoads) {
         SaveStateMod.runTimes = new HashMap<>();
         targetTurn = 8;
@@ -81,75 +82,13 @@ public class BattleAiController implements Controller {
         this.maxTurnLoads = maxTurnLoads;
     }
 
-//    public void runPredictions() {
-////        float prediction = FightPredictor.model.predict(ModelUtils.getBaseInputVector());
-////        float intPrediction = Math.round(prediction * 100);
-////        CombatPredictionPatches.combatStartingHP = AbstractDungeon.player.currentHealth;
-////        CombatPredictionPatches.combatHPLossPrediction = MathUtils.round(prediction * 100);
-//
-//        // Set up and do all card copying here
-//        // Only use thread safe things inside the other thread (maybe convert as much stuff to strings as possible)
-//        // That might mean overloading other methods from other classes to take strings, since they use them under
-//        // the hood anyways
-//
-//        long start = System.currentTimeMillis();
-//
-//        // Get the character's card pool
-//        ArrayList<AbstractCard> unupgradedCards = new ArrayList<>();
-//        switch (AbstractDungeon.player.chosenClass) {
-//            case IRONCLAD:
-//                CardLibrary.addRedCards(unupgradedCards);
-//                break;
-//            case THE_SILENT:
-//                CardLibrary.addGreenCards(unupgradedCards);
-//                break;
-//            case DEFECT:
-//                CardLibrary.addBlueCards(unupgradedCards);
-//                break;
-//            case WATCHER:
-//                CardLibrary.addPurpleCards(unupgradedCards);
-//                break;
-//            default:
-//                return;
-//        }
-//
-//        // Make copies of cards to protect from concurency problems
-//        // Add the upgraded cards to the pool
-//        List<AbstractCard> cardPool = unupgradedCards.stream().map(AbstractCard::makeCopy)
-//                                                     .collect(Collectors.toList());
-//        List<AbstractCard> upgradedPool = cardPool.stream().map(AbstractCard::makeCopy)
-//                                                  .collect(Collectors.toList());
-//        upgradedPool.forEach(AbstractCard::upgrade);
-//        cardPool.addAll(upgradedPool);
-//
-//        List<AbstractCard> playerCards = new ArrayList<>(AbstractDungeon.player.masterDeck.group)
-//                .stream().map(AbstractCard::makeCopy).collect(Collectors.toList());
-//        List<AbstractRelic> playerRelics = new ArrayList<>(AbstractDungeon.player.relics).stream()
-//                                                                                         .map(AbstractRelic::makeCopy)
-//                                                                                         .collect(Collectors
-//                                                                                                 .toList());
-//        int startingHealth = AbstractDungeon.player.currentHealth;
-//        int maxHealth = AbstractDungeon.player.maxHealth;
-//
-//        // Get the enemies to predict against
-//        Set<String> elitesAndBosses = new HashSet<>();
-//        elitesAndBosses.addAll(BaseGameConstants.eliteIDs.get(AbstractDungeon.actNum));
-//        elitesAndBosses.add(AbstractDungeon.bossKey);
-//        if (AbstractDungeon.actNum < 4) {
-//            elitesAndBosses
-//                    .addAll(BaseGameConstants.elitesAndBossesByAct.get(AbstractDungeon.actNum + 1));
-//        }
-//        long end = System.currentTimeMillis();
-//
-//        new Thread(() -> {
-//            FightPredictor
-//                    .getPercentiles(cardPool, playerCards, playerRelics, startingHealth, maxHealth, elitesAndBosses);
-//
-//            System.err.println(" predictions " + FightPredictor.percentiles.entrySet());
-//        }).start();
-//    }
-
     public void step() {
+        Path currentDir = Paths.get("");
+
+        // Get the absolute path of the current directory
+        String absolutePath = currentDir.toAbsolutePath().toString();
+        OriUtils.getEnemyTypes();
+
         if (isDone) {
             return;
         }
@@ -167,6 +106,8 @@ public class BattleAiController implements Controller {
 
             SaveStateMod.runTimes = new HashMap<>();
             CardState.resetFreeCards();
+
+            //
         }
 
         if (curTurn == null || curTurn.isDone) {
