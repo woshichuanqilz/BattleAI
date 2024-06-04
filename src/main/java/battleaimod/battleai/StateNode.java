@@ -27,11 +27,8 @@ import java.util.List;
 import java.util.function.Function;
 
 import static battleaimod.ValueFunctions.getStateScore;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class StateNode {
-    public static final Logger logger = LogManager.getLogger(StateNode.class.getName());
 
     private final BattleAiController controller;
 
@@ -101,6 +98,7 @@ public class StateNode {
                     controller.deathNode = this;
                 }
 
+                BattleAiController.logger.info("OriCode StateNode.step() - Player is dead");
                 isDone = true;
                 return null;
             }
@@ -110,8 +108,10 @@ public class StateNode {
                         getStateScore(this) > getStateScore(controller.bestEnd);
                 if (isBestWin) {
                     controller.bestEnd = this;
+                    BattleAiController.logger.info("OriCode StateNode.step() - New best end");
                 }
 
+                BattleAiController.logger.info("OriCode StateNode.step() - Battle is over");
                 isDone = true;
                 return null;
             } else {
@@ -120,15 +120,20 @@ public class StateNode {
         }
 
         if (commands.isEmpty()) {
+            BattleAiController.logger.info("OriCode StateNode.step() - No commands available");
             isDone = true;
             return null;
         }
 
-        logger.info("OriCode " + getClass().getName() + ".step() commands:" + commands);
-        logger.info("OriCode StateNode.step() - commandIndex: " + commandIndex + ", commands.size(): " + commands.size());
+        BattleAiController.logger.info("OriCode StateNode.step() - commandIndex: " + commandIndex +
+                ", commands.size(): " + commands.size() + "\n Commands: " + commands +
+                "\n Turn: " + GameActionManager.turn);
         Command toExecute = commands.get(commandIndex);
         commandIndex++;
         isDone = commandIndex >= commands.size();
+        if(isDone) {
+            BattleAiController.logger.info("OriCode StateNode.step() - isDone CommandIndex >= commands.size()");
+        }
 
         return toExecute;
     }

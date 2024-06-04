@@ -1,9 +1,5 @@
 package battleaimod.battleai;
 
-//import FightPredictor.FightPredictor;
-//import FightPredictor.ml.ModelUtils;
-//import FightPredictor.patches.com.megacrit.cardcrawl.combat.CombatPredictionPatches;
-//import FightPredictor.util.BaseGameConstants;
 import basemod.BaseMod;
 import battleaimod.ValueFunctions;
 import com.badlogic.gdx.math.MathUtils;
@@ -22,9 +18,15 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import static savestate.SaveStateMod.addRuntime;
 
 public class BattleAiController implements Controller {
+    public static final Logger logger = LogManager.getLogger(StateNode.class.getName());
+    public static int count_test = 0;
+
     private final int maxTurnLoads;
 
     public int targetTurn;
@@ -180,6 +182,7 @@ public class BattleAiController implements Controller {
                     if (bestTurn == null) {
                         System.err.println("Loading for backup " + backupTurn);
                         bestTurn = backupTurn;
+                        BattleAiController.logger.info("OriCode bestTurn backupTurn");
                     }
                     System.err.println("Loading for turn load threshold, best turn: " + bestTurn);
                     turnsLoaded = 0;
@@ -198,6 +201,7 @@ public class BattleAiController implements Controller {
 
                     if (backStepTurn != null && (committedTurn == null || backStepTurn.startingState.saveState.turn > committedTurn.startingState.saveState.turn)) {
                         bestTurn = backStepTurn;
+                        BattleAiController.logger.info("OriCode bestTurn backStepTurn");
                     }
 
                     System.err.println("Backstepping to turn: " + bestTurn);
@@ -206,8 +210,10 @@ public class BattleAiController implements Controller {
                     turns.add(toAdd);
                     targetTurn = bestTurn.startingState.saveState.turn + targetTurnJump;
                     toAdd.startingState.saveState.loadState();
+                    BattleAiController.logger.info("OriCode toAdd start_state loadState");
                     committedTurn = toAdd;
                     bestTurn = null;
+                    BattleAiController.logger.info("OriCode bestTurn null");
                     backupTurn = null;
                     deathNode = null;
 
@@ -235,6 +241,7 @@ public class BattleAiController implements Controller {
             if (turnNumber >= targetTurn) {
                 if (bestTurn == null || curTurn.isBetterThan(bestTurn)) {
                     bestTurn = curTurn;
+                    BattleAiController.logger.info("OriCode bestTurn curTurn");
                 }
 
                 addRuntime("turnsLoaded", 1);

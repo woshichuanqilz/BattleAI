@@ -224,7 +224,8 @@ public class BattleClientController {
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }
-            String[] command = {SteamSearch.findJRE(), "-Xms1024m", "-Xmx2048m", "-jar", "-DisServer=true", mtsPath, "--profile", "Server", "--skip-launcher", "--skip-intro"};
+//            String[] command = {SteamSearch.findJRE(), "-Xms1024m", "-Xmx2048m", "-jar", "-DisServer=true", mtsPath, "--profile", "Server", "--skip-launcher", "--skip-intro"};
+            String[] command = {SteamSearch.findJRE(), "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005", "-Xms1024m", "-Xmx2048m", "-jar", "-DisServer=true", mtsPath, "--profile", "Server", "--skip-intro", "--skip-launcher"};
             // ProcessBuilder will execute process named 'CMD' and will provide '/C' and 'dir' as command line arguments to 'CMD'
 
             ProcessBuilder pbuilder = new ProcessBuilder(command);

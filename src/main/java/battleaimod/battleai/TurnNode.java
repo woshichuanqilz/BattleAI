@@ -5,6 +5,7 @@ import com.megacrit.cardcrawl.actions.GameActionManager;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import ludicrousspeed.simulator.commands.Command;
 import ludicrousspeed.simulator.commands.EndCommand;
+import org.apache.logging.log4j.Logger;
 import savestate.SaveState;
 
 import java.util.ArrayList;
@@ -45,12 +46,16 @@ public class TurnNode implements Comparable<TurnNode> {
         if (parent != null && BattleAiController.SHOULD_SHOW_TREE) {
             parent.children.add(this);
         }
+
+        BattleAiController.logger.info("OriCode new TurnNode created");
     }
 
     public boolean step() {
+        BattleAiController.count_test += 1;
         if (isDone) {
             return true;
         }
+        BattleAiController.logger.info("OriCode GameTurn " + GameActionManager.turn);
 
         if (!initialized) {
             initialized = true;
@@ -67,6 +72,7 @@ public class TurnNode implements Comparable<TurnNode> {
         if (!runningCommands) {
             runningCommands = true;
             curState.saveState.loadState();
+            BattleAiController.logger.info("OriCode curState unRunning loadState");
             return false;
         }
 
@@ -89,9 +95,11 @@ public class TurnNode implements Comparable<TurnNode> {
             addRuntime("turnsLoaded", 1);
             TurnNode toAdd = new TurnNode(curState, controller, this);
             states.pop();
+            BattleAiController.logger.info("OriCode " + getClass().getName() + " states pop new turn, size:" + states.size());
 
             while (!states.isEmpty() && states.peek().isDone()) {
                 states.pop();
+                BattleAiController.logger.info("OriCode " + getClass().getName() + " states pop is done, size:" + states.size());
             }
 
             runningCommands = false;
@@ -101,12 +109,14 @@ public class TurnNode implements Comparable<TurnNode> {
                 if (turnNumber >= controller.targetTurn) {
                     if (controller.bestTurn == null || toAdd.isBetterThan(controller.bestTurn)) {
                         controller.bestTurn = toAdd;
+                        BattleAiController.logger.info("OriCode bestTurn " + toAdd.turnLabel);
                     }
                 } else {
                     if (controller.backupTurn == null ||
                             controller.backupTurn.startingState.saveState.turn < toAdd.startingState.saveState.turn ||
                             (toAdd.isBetterThan(controller.backupTurn)) && controller.backupTurn.startingState.saveState.turn == toAdd.startingState.saveState.turn) {
                         controller.backupTurn = toAdd;
+                        BattleAiController.logger.info("OriCode backupTurn " + toAdd.turnLabel);
                     }
 
                     controller.turns.add(toAdd);
@@ -117,8 +127,10 @@ public class TurnNode implements Comparable<TurnNode> {
 
         if (curState.isDone()) {
             states.pop();
+            BattleAiController.logger.info("OriCode " + getClass().getName() + "states pop cs done, size:" + states.size());
             if (!states.empty()) {
                 states.peek().saveState.loadState();
+                BattleAiController.logger.info("OriCode unEmpty loadState");
             }
         } else {
             Command toExecute = curState.step();
@@ -126,24 +138,19 @@ public class TurnNode implements Comparable<TurnNode> {
             if (toExecute == null) {
                 controller.turnsLoaded++;
                 states.pop();
+                BattleAiController.logger.info("OriCode " + getClass().getName() + "states pop, size:" + states.size());
                 if (!states.isEmpty()) {
                     states.peek().saveState.loadState();
+                    BattleAiController.logger.info("OriCode curState exeNull and unEmpty loadState");
                 }
                 return true;
             } else {
                 StateNode toAdd = new StateNode(curState, toExecute, controller);
 
                 try {
-//                    System.err.println("commands " + states.peek().commands);
-//                    String hand = AbstractDungeon.player.hand.group.stream().map(card -> card.name)
-//                                                                    .collect(Collectors
-//                                                                           .joining(","));
-//
-//                    System.err.println("hand " + hand);
-//                    System.err.println("executing " + toExecute);
-
                     toExecute.execute();
                     states.push(toAdd);
+                    BattleAiController.logger.info("OriCode " + getClass().getName() + " states push, size:" + states.size());
                 } catch (IndexOutOfBoundsException e) {
                     addRuntime("Execution Exception", 1);
                 }
