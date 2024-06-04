@@ -1,5 +1,5 @@
 {
-  "TWO_LOUSES":
+  "enemy_types": [
     {
       "name": "TWO_LOUSES",
       "count": 2,
@@ -8,5 +8,15 @@
         "FuzzyLouseNormal",
         "FuzzyLouseDefensive"
       ]
+    },
+    {
+      "name": "TEST",
+      "count": 2,
+      "match_type": "contain",
+      "monster_list": [
+        "FuzzyLouseNormal",
+        "FuzzyLouseDefensive"
+      ]
     }
+  ]
 }
