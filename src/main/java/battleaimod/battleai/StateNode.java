@@ -44,11 +44,13 @@ public class StateNode {
     // List of commands available from the current state, ordered by guessed result from best to
     // worst.
     public List<Command> commands;
-    private int commandIndex = -1;
+    private int commandIndex = 0;
 
     // The number of actions taken in this turn, used to limit the total number of actions to
     // prevent infinite loops.
     int turnDepth;
+
+    public int childIndex = 0;
 
     public StateNode(StateNode parent, Command lastCommand, BattleAiController controller) {
         this.parent = parent;
@@ -56,6 +58,15 @@ public class StateNode {
         this.controller = controller;
     }
 
+    public void process(){
+        if(saveState == null){
+            saveState = new SaveState();
+        }
+        Command toExecute = commands.get(commandIndex);
+        commandIndex ++;
+        toExecute.execute();
+        StateNode toAdd = new StateNode(this, toExecute, controller);
+    }
     /**
      * Performs the next step and returns true iff the parent should load state
      */
@@ -120,20 +131,13 @@ public class StateNode {
         }
 
         if (commands.isEmpty()) {
-//            BattleAiController.logger.info("OriCode StateNode.step() - No commands available");
             isDone = true;
             return null;
         }
 
-//        BattleAiController.logger.info("OriCode StateNode.step() - commandIndex: " + commandIndex +
-//                ", commands.size(): " + commands.size() + "\n Commands: " + commands +
-//                "\n Turn: " + GameActionManager.turn);
         Command toExecute = commands.get(commandIndex);
         commandIndex++;
         isDone = commandIndex >= commands.size();
-        if(isDone) {
-//            BattleAiController.logger.info("OriCode StateNode.step() - isDone CommandIndex >= commands.size()");
-        }
 
         return toExecute;
     }

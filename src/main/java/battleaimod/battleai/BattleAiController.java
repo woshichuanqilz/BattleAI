@@ -7,6 +7,7 @@ import com.megacrit.cardcrawl.monsters.AbstractMonster;
 import ludicrousspeed.Controller;
 import ludicrousspeed.simulator.commands.CardCommand;
 import ludicrousspeed.simulator.commands.Command;
+import ludicrousspeed.simulator.commands.CommandList;
 import savestate.CardState;
 import savestate.SaveState;
 import savestate.SaveStateMod;
@@ -65,9 +66,11 @@ public class BattleAiController implements Controller {
 
     private long startTime = 0;
     public int totalDamage = 0;
+    public StateNode root;
+    public StateNode curState;
 
     // 基准线战斗评估是否开始
-    private boolean is_ref_battle_begin;
+//    private boolean is_ref_battle_begin;
 
     // my own
 //    private static final ArrayList<String> MONSTER_TYPE_LIST = getenm;
@@ -80,11 +83,16 @@ public class BattleAiController implements Controller {
         bestEnd = null;
         startingState = state;
         initialized = false;
-        is_ref_battle_begin = true;
 
         System.err.println("loading state from constructor");
         startingState.loadState();
         this.maxTurnLoads = maxTurnLoads;
+
+        // root node
+        root = new StateNode(null, null, this);
+        root.saveState = startingState;
+        root.commands = CommandList.getAvailableCommands(null, BattleAiMod.actionHeuristics);
+        curState = root;
     }
 
     public void step() {
@@ -107,118 +115,118 @@ public class BattleAiController implements Controller {
             CardState.resetFreeCards();
         }
 
-        if(is_ref_battle_begin){
-            processRefBattle();
-        }
+        curState.process();
 
 
-        if (curTurn == null || curTurn.isDone) {
-            if (turns.isEmpty() || turnsLoaded >= maxTurnLoads) {
-                if (bestEnd != null) {
-                    System.err.println("Found end at turn threshold, going into rerun");
-                    printRuntimeStats();
-
-                    isDone = true;
-                    return;
-                } else if (bestTurn != null || backupTurn != null) {
-                    if (bestTurn == null) {
-                        System.err.println("Loading for backup " + backupTurn);
-                        bestTurn = backupTurn;
-//                        BattleAiController.logger.info("OriCode bestTurn backupTurn");
-                    }
-                    System.err.println("Loading for turn load threshold, best turn: " + bestTurn);
-                    turnsLoaded = 0;
-                    turns.clear();
-
-                    int backStep = targetTurnJump / 2;
-
-                    TurnNode backStepTurn = bestTurn;
-                    for (int i = 0; i < backStep; i++) {
-                        if (backStepTurn == null) {
-                            break;
-                        }
-
-                        backStepTurn = backStepTurn.parent;
-                    }
-
-                    if (backStepTurn != null && (committedTurn == null || backStepTurn.startingState.saveState.turn > committedTurn.startingState.saveState.turn)) {
-                        bestTurn = backStepTurn;
-//                        BattleAiController.logger.info("OriCode bestTurn backStepTurn");
-                    }
-
-                    System.err.println("Backstepping to turn: " + bestTurn);
-
-                    TurnNode toAdd = makeResetCopy(bestTurn);
-                    turns.add(toAdd);
-                    targetTurn = bestTurn.startingState.saveState.turn + targetTurnJump;
-                    toAdd.startingState.saveState.loadState();
-//                    BattleAiController.logger.info("OriCode toAdd start_state loadState");
-                    committedTurn = toAdd;
-                    bestTurn = null;
-//                    BattleAiController.logger.info("OriCode bestTurn null");
-                    backupTurn = null;
-                    deathNode = null;
-
-                    // TODO this is here to prevent playback errors
-                    bestEnd = null;
-
-                    return;
-                } else if (turns.isEmpty() || turnsLoaded >= maxTurnLoads * 10) {
-                    if (deathNode != null) {
-                        System.err.println("Sending back death turn");
-                        bestEnd = deathNode;
-                        isDone = true;
-                        return;
-                    }
-                }
-            }
-        }
-
-
-        while (!turns.isEmpty() && (curTurn == null || curTurn.isDone)) {
-            curTurn = turns.peek();
-
-            int turnNumber = curTurn.startingState.saveState.turn;
-
-            if (turnNumber >= targetTurn) {
-                if (bestTurn == null || curTurn.isBetterThan(bestTurn)) {
-                    bestTurn = curTurn;
-//                    BattleAiController.logger.info("OriCode bestTurn curTurn");
-                }
-
-                addRuntime("turnsLoaded", 1);
-                curTurn = null;
-                ++turnsLoaded;
-                turns.poll();
-            } else {
-                if (curTurn.isDone) {
-                    turns.poll();
-                }
-            }
-        }
-
-        if (curTurn != null) {
-            long startTurnStep = System.currentTimeMillis();
-
-//            System.err.println("Stepping Turn " + curTurn.turnLabel);
-            boolean reachedNewTurn = curTurn.step();
-            if (reachedNewTurn) {
-                curTurn = null;
-            }
-
-            addRuntime("Battle AI TurnNode Step", System.currentTimeMillis() - startTurnStep);
-        }
+//        if (curTurn == null || curTurn.isDone) {
+//            if (turns.isEmpty() || turnsLoaded >= maxTurnLoads) {
+//                if (bestEnd != null) {
+//                    System.err.println("Found end at turn threshold, going into rerun");
+//                    printRuntimeStats();
+//
+//                    isDone = true;
+//                    return;
+//                } else if (bestTurn != null || backupTurn != null) {
+//                    if (bestTurn == null) {
+//                        System.err.println("Loading for backup " + backupTurn);
+//                        bestTurn = backupTurn;
+////                        BattleAiController.logger.info("OriCode bestTurn backupTurn");
+//                    }
+//                    System.err.println("Loading for turn load threshold, best turn: " + bestTurn);
+//                    turnsLoaded = 0;
+//                    turns.clear();
+//
+//                    int backStep = targetTurnJump / 2;
+//
+//                    TurnNode backStepTurn = bestTurn;
+//                    for (int i = 0; i < backStep; i++) {
+//                        if (backStepTurn == null) {
+//                            break;
+//                        }
+//
+//                        backStepTurn = backStepTurn.parent;
+//                    }
+//
+//                    if (backStepTurn != null && (committedTurn == null || backStepTurn.startingState.saveState.turn > committedTurn.startingState.saveState.turn)) {
+//                        bestTurn = backStepTurn;
+////                        BattleAiController.logger.info("OriCode bestTurn backStepTurn");
+//                    }
+//
+//                    System.err.println("Backstepping to turn: " + bestTurn);
+//
+//                    TurnNode toAdd = makeResetCopy(bestTurn);
+//                    turns.add(toAdd);
+//                    targetTurn = bestTurn.startingState.saveState.turn + targetTurnJump;
+//                    toAdd.startingState.saveState.loadState();
+////                    BattleAiController.logger.info("OriCode toAdd start_state loadState");
+//                    committedTurn = toAdd;
+//                    bestTurn = null;
+////                    BattleAiController.logger.info("OriCode bestTurn null");
+//                    backupTurn = null;
+//                    deathNode = null;
+//
+//                    // TODO this is here to prevent playback errors
+//                    bestEnd = null;
+//
+//                    return;
+//                } else if (turns.isEmpty() || turnsLoaded >= maxTurnLoads * 10) {
+//                    if (deathNode != null) {
+//                        System.err.println("Sending back death turn");
+//                        bestEnd = deathNode;
+//                        isDone = true;
+//                        return;
+//                    }
+//                }
+//            }
+//        }
+//
+//
+//        while (!turns.isEmpty() && (curTurn == null || curTurn.isDone)) {
+//            curTurn = turns.peek();
+//
+//            int turnNumber = curTurn.startingState.saveState.turn;
+//
+//            if (turnNumber >= targetTurn) {
+//                if (bestTurn == null || curTurn.isBetterThan(bestTurn)) {
+//                    bestTurn = curTurn;
+////                    BattleAiController.logger.info("OriCode bestTurn curTurn");
+//                }
+//
+//                addRuntime("turnsLoaded", 1);
+//                curTurn = null;
+//                ++turnsLoaded;
+//                turns.poll();
+//            } else {
+//                if (curTurn.isDone) {
+//                    turns.poll();
+//                }
+//            }
+//        }
+//
+//        if (curTurn != null) {
+//            long startTurnStep = System.currentTimeMillis();
+//
+////            System.err.println("Stepping Turn " + curTurn.turnLabel);
+//            boolean reachedNewTurn = curTurn.step();
+//            if (reachedNewTurn) {
+//                curTurn = null;
+//            }
+//
+//            addRuntime("Battle AI TurnNode Step", System.currentTimeMillis() - startTurnStep);
+//        }
     }
 
     private void processRefBattle() {
-//        int dmg = getTotalMonsterDamage();
-//        if(AbstractDungeon.player.currentBlock < dmg){
-//            System.out.println("test");
-//        }
-        StateNode temp = new StateNode(null, new CardCommand(0, -1, "lizhe"), this);
-        temp.saveState = new SaveState();
-        BattleAiMod.battleAiController.bestEnd = temp;
-        BattleAiMod.battleAiController.isDone = true;
+        int dmg = getTotalMonsterDamage();
+        if(AbstractDungeon.player.currentBlock < dmg){
+            System.out.println("test");
+        }
+
+//  这里可以设置socket直接控制client端的战斗
+//        StateNode temp = new StateNode(null, new CardCommand(0, -1, "lizhe"), this);
+//        temp.saveState = new SaveState();
+//        BattleAiMod.battleAiController.bestEnd = temp;
+//        BattleAiMod.battleAiController.isDone = true;
     }
 
     private static TurnNode makeResetCopy(TurnNode node) {
