@@ -170,7 +170,7 @@ public class AiServer {
                             jsonToSend.addProperty("type", commandListString);
                             jsonToSend.add("commands", commands);
                             jsonToSend
-                                    .addProperty("predictor_damage", BattleAiMod.battleAiController.expectedDamage);
+                                    .addProperty("predictor_damage", BattleAiMod.battleAiController.totalDamage);
 
                             if (commandFileName != null) {
                                 try {

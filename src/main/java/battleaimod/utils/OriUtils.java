@@ -68,4 +68,16 @@ public class OriUtils {
 
         return "Unknown";
     }
+
+
+    public static int getTotalMonsterDamage(){
+        int totalDamage = 0;
+        for (int i = 0; i < AbstractDungeon.getMonsters().monsters.size(); i++) {
+            AbstractMonster monster = AbstractDungeon.getMonsters().monsters.get(i);
+            if (monster.intent == AbstractMonster.Intent.ATTACK) {
+                totalDamage += monster.getIntentDmg();
+            }
+        }
+        return totalDamage;
+    }
 }
