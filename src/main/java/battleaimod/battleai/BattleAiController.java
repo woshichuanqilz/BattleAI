@@ -3,9 +3,7 @@ package battleaimod.battleai;
 import battleaimod.BattleAiMod;
 import battleaimod.ValueFunctions;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
-import com.megacrit.cardcrawl.monsters.AbstractMonster;
 import ludicrousspeed.Controller;
-import ludicrousspeed.simulator.commands.CardCommand;
 import ludicrousspeed.simulator.commands.Command;
 import ludicrousspeed.simulator.commands.CommandList;
 import savestate.CardState;
@@ -21,7 +19,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import static battleaimod.utils.OriUtils.getTotalMonsterDamage;
-import static savestate.SaveStateMod.addRuntime;
 
 public class BattleAiController implements Controller {
     public static final Logger logger = LogManager.getLogger(StateNode.class.getName());
@@ -66,14 +63,14 @@ public class BattleAiController implements Controller {
 
     private long startTime = 0;
     public int totalDamage = 0;
-    public StateNode root;
-    public StateNode curState;
+
+    // ori
+    public static StateNode root;
+    public static StateNode curStateNode;
+    public static final int maxTurnCount = 15;
 
     // 基准线战斗评估是否开始
 //    private boolean is_ref_battle_begin;
-
-    // my own
-//    private static final ArrayList<String> MONSTER_TYPE_LIST = getenm;
 
     public BattleAiController(SaveState state, int maxTurnLoads) {
         SaveStateMod.runTimes = new HashMap<>();
@@ -92,7 +89,7 @@ public class BattleAiController implements Controller {
         root = new StateNode(null, null, this);
         root.saveState = startingState;
         root.commands = CommandList.getAvailableCommands(null, BattleAiMod.actionHeuristics);
-        curState = root;
+        curStateNode = root;
     }
 
     public void step() {
@@ -115,7 +112,19 @@ public class BattleAiController implements Controller {
             CardState.resetFreeCards();
         }
 
-        curState.process();
+        if(root.isDone()) {
+            isDone = true;
+            return;
+        }
+
+        while(curStateNode != null && curStateNode.isDone())
+        {
+            curStateNode = curStateNode.parent;
+        }
+
+        if (curStateNode != null) {
+            curStateNode.process();
+        }
 
 
 //        if (curTurn == null || curTurn.isDone) {

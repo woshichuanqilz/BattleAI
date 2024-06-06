@@ -1,7 +1,7 @@
 package battleaimod.battleai;
 
-import basemod.BaseMod;
 import battleaimod.BattleAiMod;
+import com.badlogic.gdx.maps.tiled.BaseTmxMapLoader;
 import com.megacrit.cardcrawl.actions.GameActionManager;
 import com.megacrit.cardcrawl.cards.AbstractCard;
 import com.megacrit.cardcrawl.cards.blue.Turbo;
@@ -51,6 +51,7 @@ public class StateNode {
     int turnDepth;
 
     public int childIndex = 0;
+    public ArrayList<StateNode> children = new ArrayList<>();
 
     public StateNode(StateNode parent, Command lastCommand, BattleAiController controller) {
         this.parent = parent;
@@ -62,11 +63,56 @@ public class StateNode {
         if(saveState == null){
             saveState = new SaveState();
         }
+
+        if (parent == null || parent.saveState.turn < saveState.turn) {
+            turnDepth = 0;
+        } else {
+            turnDepth = parent.turnDepth + 1;
+        }
+
+        if(commands == null){
+            commands = CommandList.getAvailableCommands(null, BattleAiMod.actionHeuristics);
+        }
+
+        // log part player health, current turn, lastCommand, commandIndex
+        BattleAiController.logger.info("OriCode StateNode.process() - player health: " + saveState.getPlayerHealth() + ", " +
+                "current turn: " + saveState.turn + ", lastCommand: " + lastCommand + ", commandIndex: " + commandIndex);
+
+        if(saveState.getPlayerHealth() < 1 || commandIndex >= commands.size() || turnDepth > BattleAiController.maxTurnCount){
+            // log part ===============
+            String log_str = "";
+            if(saveState.getPlayerHealth() < 1){
+                log_str = "Player is dead";
+            } else if(commandIndex >= commands.size()){
+                log_str = "No more commands";
+            } else if(turnDepth > BattleAiController.maxTurnCount){
+                log_str = "Max turn count reached";
+            }
+            BattleAiController.logger.info("OriCode StateNode.process() - is Done: " + log_str);
+            // log part ===============
+
+            isDone = true;
+            return;
+        }
+
+        if(isBattleOver()){
+            isDone = true;
+            BattleAiController.logger.info("OriCode StateNode.process() - Battle is over");
+            // 这个时候需要评估bestEnd, 以及是否需要更新bestEnd, 当前的StateNode 是一个END,是否是bestEnd
+            if(controller.bestEnd == null || getStateScore(this) > getStateScore(controller.bestEnd)){
+                controller.bestEnd = this;
+            }
+            return;
+        }
+
         Command toExecute = commands.get(commandIndex);
         commandIndex ++;
         toExecute.execute();
-        StateNode toAdd = new StateNode(this, toExecute, controller);
+        StateNode child_node = new StateNode(this, toExecute, controller);
+        BattleAiController.curStateNode = child_node;
+        children.add(child_node);
     }
+
     /**
      * Performs the next step and returns true iff the parent should load state
      */

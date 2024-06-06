@@ -1,5 +1,6 @@
 package battleaimod;
 
+import battleaimod.battleai.BattleAiController;
 import battleaimod.battleai.StateNode;
 import battleaimod.battleai.TurnNode;
 import com.megacrit.cardcrawl.cards.colorless.RitualDagger;
@@ -225,66 +226,67 @@ public class ValueFunctions {
      * potions, and scaling effects matter here.
      */
     public static int getStateScore(StateNode node) {
-        int totalRitualDaggerDamage = 0;
-        for (CardState card : node.saveState.playerState.hand) {
-            switch (StateFactories.cardIds[card.cardIdIndex]) {
-                case RitualDagger.ID:
-                    totalRitualDaggerDamage += card.baseDamage;
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        for (CardState card : node.saveState.playerState.drawPile) {
-            switch (StateFactories.cardIds[card.cardIdIndex]) {
-                case RitualDagger.ID:
-                    totalRitualDaggerDamage += card.baseDamage;
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        for (CardState card : node.saveState.playerState.discardPile) {
-            switch (StateFactories.cardIds[card.cardIdIndex]) {
-                case RitualDagger.ID:
-                    totalRitualDaggerDamage += card.baseDamage;
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        for (CardState card : node.saveState.playerState.exhaustPile) {
-            switch (StateFactories.cardIds[card.cardIdIndex]) {
-                case RitualDagger.ID:
-                    totalRitualDaggerDamage += card.baseDamage;
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        int ritualDaggerScore = totalRitualDaggerDamage * 80;
-        int lessonLearnedScore = node.saveState.lessonLearnedCount * 100;
-        int feedScore = node.saveState.playerState.maxHealth * 30;
-
-        int additonalHeuristicScore =
-                BattleAiMod.additionalValueFunctions.stream()
-                                                    .map(function -> function
-                                                            .apply(node.saveState))
-                                                    .collect(Collectors
-                                                            .summingInt(Integer::intValue));
-
-        return feedScore +
-                node.saveState.playerState.gold * 2 +
-                ritualDaggerScore +
-                StateNode.getPlayerDamage(node) * -1 +
-                ValueFunctions.getPotionScore(node.saveState) +
-                getRelicScore(node.saveState) +
-                lessonLearnedScore +
-                additonalHeuristicScore;
+        return node.saveState.getPlayerHealth() - BattleAiController.root.saveState.getPlayerHealth();
+//        int totalRitualDaggerDamage = 0;
+//        for (CardState card : node.saveState.playerState.hand) {
+//            switch (StateFactories.cardIds[card.cardIdIndex]) {
+//                case RitualDagger.ID:
+//                    totalRitualDaggerDamage += card.baseDamage;
+//                    break;
+//                default:
+//                    break;
+//            }
+//        }
+//
+//        for (CardState card : node.saveState.playerState.drawPile) {
+//            switch (StateFactories.cardIds[card.cardIdIndex]) {
+//                case RitualDagger.ID:
+//                    totalRitualDaggerDamage += card.baseDamage;
+//                    break;
+//                default:
+//                    break;
+//            }
+//        }
+//
+//        for (CardState card : node.saveState.playerState.discardPile) {
+//            switch (StateFactories.cardIds[card.cardIdIndex]) {
+//                case RitualDagger.ID:
+//                    totalRitualDaggerDamage += card.baseDamage;
+//                    break;
+//                default:
+//                    break;
+//            }
+//        }
+//
+//        for (CardState card : node.saveState.playerState.exhaustPile) {
+//            switch (StateFactories.cardIds[card.cardIdIndex]) {
+//                case RitualDagger.ID:
+//                    totalRitualDaggerDamage += card.baseDamage;
+//                    break;
+//                default:
+//                    break;
+//            }
+//        }
+//
+//        int ritualDaggerScore = totalRitualDaggerDamage * 80;
+//        int lessonLearnedScore = node.saveState.lessonLearnedCount * 100;
+//        int feedScore = node.saveState.playerState.maxHealth * 30;
+//
+//        int additonalHeuristicScore =
+//                BattleAiMod.additionalValueFunctions.stream()
+//                                                    .map(function -> function
+//                                                            .apply(node.saveState))
+//                                                    .collect(Collectors
+//                                                            .summingInt(Integer::intValue));
+//
+//        return feedScore +
+//                node.saveState.playerState.gold * 2 +
+//                ritualDaggerScore +
+//                StateNode.getPlayerDamage(node) * -1 +
+//                ValueFunctions.getPotionScore(node.saveState) +
+//                getRelicScore(node.saveState) +
+//                lessonLearnedScore +
+//                additonalHeuristicScore;
     }
 
     public static int getRelicScore(SaveState saveState) {
