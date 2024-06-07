@@ -26,7 +26,7 @@
             <artifactId>SaveStateMod</artifactId>
             <version>1.0</version>
             <scope>system</scope>
-            <systemPath>${ModPath}/2489671162/SaveStateMod.jar</systemPath>
+            <systemPath>${GamePath}/mods/SaveStateMod.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>LudicrousSpeed</groupId>

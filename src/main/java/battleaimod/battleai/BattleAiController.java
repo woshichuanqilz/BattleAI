@@ -3,6 +3,7 @@ package battleaimod.battleai;
 import battleaimod.BattleAiMod;
 import battleaimod.ValueFunctions;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
+import com.megacrit.cardcrawl.helpers.GetAllInBattleInstances;
 import ludicrousspeed.Controller;
 import ludicrousspeed.simulator.commands.Command;
 import ludicrousspeed.simulator.commands.CommandList;
@@ -88,7 +89,6 @@ public class BattleAiController implements Controller {
         // root node
         root = new StateNode(null, null, this);
         root.saveState = startingState;
-        root.commands = CommandList.getAvailableCommands(null, BattleAiMod.actionHeuristics);
         curStateNode = root;
     }
 
@@ -114,6 +114,7 @@ public class BattleAiController implements Controller {
 
         if(root.isDone()) {
             isDone = true;
+            generateMindmap();
             return;
         }
 
@@ -293,86 +294,122 @@ public class BattleAiController implements Controller {
         return maxTurnLoads;
     }
 
-    private void showTree() throws IOException {
+    public void generateMindmap() {
+        StringBuilder result = new StringBuilder();
+        result.append("@startmindmap\n");
+        drawNode(root, result, "");
+        result.append("@endmindmap\n");
+        // write to file
         try {
-            FileWriter writer = new FileWriter("out.dot");
-
-            writer.write("digraph battleTurns {\n");
-            TurnNode start = startNode;
-            LinkedList<TurnNode> bfs = new LinkedList<>();
-            bfs.add(start);
-            while (!bfs.isEmpty()) {
-                TurnNode node = bfs.pollFirst();
-
-                int playerDamage = ValueFunctions.getPlayerDamage(node);
-                int monsterHealth = TurnNode.getTotalMonsterHealth(node);
-
-                String nodeLabel = String
-                        .format("player damage:%d monster health:%d", playerDamage, monsterHealth);
-
-
-                double f = (double) node.turnLabel / 100.;
-
-                int r = 0;
-                int g = 0;
-                int b = 0;
-                double a = (1 - f) / 0.25;    //invert and group
-                int X = (int) Math.floor(a);    //this is the integer part
-                int Y = (int) Math.floor(255 * (a - X)); //fractional part from 0 to 255
-                switch (X) {
-                    case 0:
-                        r = 255;
-                        g = Y;
-                        b = 0;
-                        break;
-                    case 1:
-                        r = 255 - Y;
-                        g = 255;
-                        b = 0;
-                        break;
-                    case 2:
-                        r = 0;
-                        g = 255;
-                        b = Y;
-                        break;
-                    case 3:
-                        r = 0;
-                        g = 255 - Y;
-                        b = 255;
-                        break;
-                    case 4:
-                        r = 0;
-                        g = 0;
-                        b = 255;
-                        break;
-                }
-
-                writer.write(String
-                        .format("%s [label=\"%s\" color=\"#%02X%02X%02X\" style=\"filled\"]\n", node.turnLabel, nodeLabel, r, g, b));
-                node.children.forEach(child -> {
-                    try {
-                        ArrayList<Command> commands = new ArrayList<>();
-                        StateNode iterator = child.startingState;
-                        while (iterator != node.startingState) {
-                            commands.add(0, iterator.lastCommand);
-                            iterator = iterator.parent;
-                        }
-                        writer.write(String
-                                .format("%s->%s [label=\"%s\"]\n", node.turnLabel, child.turnLabel, commands));
-                    } catch (IOException e) {
-                        System.err.println("writing failed");
-                        e.printStackTrace();
-                    }
-                    bfs.add(child);
-                });
-            }
-
-            writer.write("}\n");
+            FileWriter writer = new FileWriter("ori_out.dot");
+            writer.write(result.toString());
             writer.close();
-
         } catch (IOException e) {
             System.err.println("file writing failed");
             e.printStackTrace();
         }
     }
+
+    private void drawNode(StateNode node, StringBuilder result, String parent) {
+        String nodeName;
+        if(node.saveState == null){
+            nodeName = "EndNode?";
+        }
+        else if(node.lastCommand != null){
+            nodeName = "S [Health: " + node.saveState.getPlayerHealth() + ", Last Command: " + node.lastCommand + "]";
+        }
+        else{
+            nodeName = "S [Health: " + node.saveState.getPlayerHealth() + "]";
+        }
+        BattleAiController.logger.info(nodeName);
+        if (!parent.isEmpty()) {
+            result.append(parent).append(" --> ").append(nodeName).append("\n");
+        }
+        for (StateNode child : node.children) {
+            drawNode(child, result, nodeName);
+        }
+    }
+
+//    private void showTree() throws IOException {
+//        try {
+//            FileWriter writer = new FileWriter("out.dot");
+//
+//            writer.write("digraph battleTurns {\n");
+//            TurnNode start = startNode;
+//            LinkedList<TurnNode> bfs = new LinkedList<>();
+//            bfs.add(start);
+//            while (!bfs.isEmpty()) {
+//                TurnNode node = bfs.pollFirst();
+//
+//                int playerDamage = ValueFunctions.getPlayerDamage(node);
+//                int monsterHealth = TurnNode.getTotalMonsterHealth(node);
+//
+//                String nodeLabel = String
+//                        .format("player damage:%d monster health:%d", playerDamage, monsterHealth);
+//
+//
+//                double f = (double) node.turnLabel / 100.;
+//
+//                int r = 0;
+//                int g = 0;
+//                int b = 0;
+//                double a = (1 - f) / 0.25;    //invert and group
+//                int X = (int) Math.floor(a);    //this is the integer part
+//                int Y = (int) Math.floor(255 * (a - X)); //fractional part from 0 to 255
+//                switch (X) {
+//                    case 0:
+//                        r = 255;
+//                        g = Y;
+//                        b = 0;
+//                        break;
+//                    case 1:
+//                        r = 255 - Y;
+//                        g = 255;
+//                        b = 0;
+//                        break;
+//                    case 2:
+//                        r = 0;
+//                        g = 255;
+//                        b = Y;
+//                        break;
+//                    case 3:
+//                        r = 0;
+//                        g = 255 - Y;
+//                        b = 255;
+//                        break;
+//                    case 4:
+//                        r = 0;
+//                        g = 0;
+//                        b = 255;
+//                        break;
+//                }
+//
+//                writer.write(String
+//                        .format("%s [label=\"%s\" color=\"#%02X%02X%02X\" style=\"filled\"]\n", node.turnLabel, nodeLabel, r, g, b));
+//                node.children.forEach(child -> {
+//                    try {
+//                        ArrayList<Command> commands = new ArrayList<>();
+//                        StateNode iterator = child.startingState;
+//                        while (iterator != node.startingState) {
+//                            commands.add(0, iterator.lastCommand);
+//                            iterator = iterator.parent;
+//                        }
+//                        writer.write(String
+//                                .format("%s->%s [label=\"%s\"]\n", node.turnLabel, child.turnLabel, commands));
+//                    } catch (IOException e) {
+//                        System.err.println("writing failed");
+//                        e.printStackTrace();
+//                    }
+//                    bfs.add(child);
+//                });
+//            }
+//
+//            writer.write("}\n");
+//            writer.close();
+//
+//        } catch (IOException e) {
+//            System.err.println("file writing failed");
+//            e.printStackTrace();
+//        }
+//    }
 }

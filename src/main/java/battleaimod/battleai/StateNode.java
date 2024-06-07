@@ -13,11 +13,10 @@ import com.megacrit.cardcrawl.cards.red.Dropkick;
 import com.megacrit.cardcrawl.cards.red.SpotWeakness;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.monsters.AbstractMonster;
+import com.megacrit.cardcrawl.rooms.MonsterRoom;
+import com.megacrit.cardcrawl.rooms.MonsterRoomBoss;
 import com.megacrit.cardcrawl.ui.panels.EnergyPanel;
-import ludicrousspeed.simulator.commands.CardCommand;
-import ludicrousspeed.simulator.commands.Command;
-import ludicrousspeed.simulator.commands.CommandList;
-import ludicrousspeed.simulator.commands.EndCommand;
+import ludicrousspeed.simulator.commands.*;
 import savestate.SaveState;
 
 import java.util.ArrayList;
@@ -63,6 +62,9 @@ public class StateNode {
         if(saveState == null){
             saveState = new SaveState();
         }
+        else{
+            saveState.loadState();
+        }
 
         if (parent == null || parent.saveState.turn < saveState.turn) {
             turnDepth = 0;
@@ -72,14 +74,22 @@ public class StateNode {
 
         if(commands == null){
             commands = CommandList.getAvailableCommands(null, BattleAiMod.actionHeuristics);
+            if(!(AbstractDungeon.getCurrRoom() instanceof MonsterRoomBoss)){
+                // remove PotionCommand from commands
+                commands.removeIf(command -> command instanceof PotionCommand);
+            }
         }
 
         // log part player health, current turn, lastCommand, commandIndex
-        BattleAiController.logger.info("OriCode StateNode.process() - player health: " + saveState.getPlayerHealth() + ", " +
-                "current turn: " + saveState.turn + ", lastCommand: " + lastCommand + ", commandIndex: " + commandIndex);
-
-        if(saveState.getPlayerHealth() < 1 || commandIndex >= commands.size() || turnDepth > BattleAiController.maxTurnCount){
-            // log part ===============
+        BattleAiController.logger.info("OriCode StateNode.process() - HP: " + saveState.getPlayerHealth() + ", " +
+                "Turn: " + saveState.turn + ", commandIndex: " + commandIndex + " lastCommand: " + lastCommand);
+        if(saveState.getPlayerHealth() < 1
+                || commandIndex >= commands.size()
+                || turnDepth > BattleAiController.maxTurnCount
+                || (controller.bestEnd != null
+                   && saveState.getPlayerHealth() < controller.bestEnd.saveState.getPlayerHealth())
+        ){
+            //  log part ===============
             String log_str = "";
             if(saveState.getPlayerHealth() < 1){
                 log_str = "Player is dead";
@@ -87,11 +97,16 @@ public class StateNode {
                 log_str = "No more commands";
             } else if(turnDepth > BattleAiController.maxTurnCount){
                 log_str = "Max turn count reached";
+            } else if (controller.bestEnd != null
+                    && saveState.getPlayerHealth() < controller.bestEnd.saveState.getPlayerHealth()){
+                log_str = "Player health is less than bestEnd";
             }
+
             BattleAiController.logger.info("OriCode StateNode.process() - is Done: " + log_str);
             // log part ===============
 
             isDone = true;
+            BattleAiController.curStateNode = parent;
             return;
         }
 
@@ -102,6 +117,7 @@ public class StateNode {
             if(controller.bestEnd == null || getStateScore(this) > getStateScore(controller.bestEnd)){
                 controller.bestEnd = this;
             }
+            BattleAiController.curStateNode = parent;
             return;
         }
 
