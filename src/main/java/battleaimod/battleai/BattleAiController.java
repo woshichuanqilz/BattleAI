@@ -68,7 +68,7 @@ public class BattleAiController implements Controller {
     // ori
     public static StateNode root;
     public static StateNode curStateNode;
-    public static final int maxTurnCount = 15;
+    public static final int maxTurnCount = 7;
 
     // 基准线战斗评估是否开始
 //    private boolean is_ref_battle_begin;
@@ -294,39 +294,40 @@ public class BattleAiController implements Controller {
         return maxTurnLoads;
     }
 
+    private void drawNode(StateNode node, StringBuilder nodeLabels, StringBuilder connections, String parent) {
+        String nodeName = "S" + node.hashCode();
+        if(node.saveState == null){
+            nodeLabels.append(nodeName).append(": EndNode\n");
+        }
+        else if(node.lastCommand != null){
+            nodeLabels.append(nodeName).append(": [Health: ").append(node.saveState.getPlayerHealth()).append(", Last Command: ").append(node.lastCommand).append("]\n");
+        }
+        else{
+            nodeLabels.append(nodeName).append(": [Health: ").append(node.saveState.getPlayerHealth()).append("]\n");
+        }
+        if (!parent.isEmpty()) {
+            connections.append(parent).append(" --> ").append(nodeName).append("\n");
+        }
+        for (StateNode child : node.children) {
+            drawNode(child, nodeLabels, connections, nodeName);
+        }
+    }
+
     public void generateMindmap() {
-        StringBuilder result = new StringBuilder();
-        result.append("@startmindmap\n");
-        drawNode(root, result, "");
-        result.append("@endmindmap\n");
+        StringBuilder nodeLabels = new StringBuilder();
+        StringBuilder connections = new StringBuilder();
+        nodeLabels.append("@startuml\n");
+        drawNode(root, nodeLabels, connections, "");
+        nodeLabels.append(connections.toString());
+        nodeLabels.append("@enduml\n");
         // write to file
         try {
-            FileWriter writer = new FileWriter("ori_out.dot");
-            writer.write(result.toString());
+            FileWriter writer = new FileWriter("ori.puml");
+            writer.write(nodeLabels.toString());
             writer.close();
         } catch (IOException e) {
             System.err.println("file writing failed");
             e.printStackTrace();
-        }
-    }
-
-    private void drawNode(StateNode node, StringBuilder result, String parent) {
-        String nodeName;
-        if(node.saveState == null){
-            nodeName = "EndNode?";
-        }
-        else if(node.lastCommand != null){
-            nodeName = "S [Health: " + node.saveState.getPlayerHealth() + ", Last Command: " + node.lastCommand + "]";
-        }
-        else{
-            nodeName = "S [Health: " + node.saveState.getPlayerHealth() + "]";
-        }
-        BattleAiController.logger.info(nodeName);
-        if (!parent.isEmpty()) {
-            result.append(parent).append(" --> ").append(nodeName).append("\n");
-        }
-        for (StateNode child : node.children) {
-            drawNode(child, result, nodeName);
         }
     }
 

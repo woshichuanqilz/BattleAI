@@ -49,8 +49,9 @@ public class StateNode {
     // prevent infinite loops.
     int turnDepth;
 
-    public int childIndex = 0;
     public ArrayList<StateNode> children = new ArrayList<>();
+    public int childIndex = 0;
+    private static int process_times = 0;
 
     public StateNode(StateNode parent, Command lastCommand, BattleAiController controller) {
         this.parent = parent;
@@ -59,6 +60,12 @@ public class StateNode {
     }
 
     public void process(){
+        StateNode.process_times ++;
+        if(StateNode.process_times > 1000){
+            BattleAiController.root.isDone = true;
+            isDone = true;
+            return;
+        }
         if(saveState == null){
             saveState = new SaveState();
         }
@@ -80,44 +87,34 @@ public class StateNode {
             }
         }
 
-        // log part player health, current turn, lastCommand, commandIndex
-        BattleAiController.logger.info("OriCode StateNode.process() - HP: " + saveState.getPlayerHealth() + ", " +
-                "Turn: " + saveState.turn + ", commandIndex: " + commandIndex + " lastCommand: " + lastCommand);
         if(saveState.getPlayerHealth() < 1
                 || commandIndex >= commands.size()
-                || turnDepth > BattleAiController.maxTurnCount
-                || (controller.bestEnd != null
-                   && saveState.getPlayerHealth() < controller.bestEnd.saveState.getPlayerHealth())
-        ){
-            //  log part ===============
-            String log_str = "";
-            if(saveState.getPlayerHealth() < 1){
-                log_str = "Player is dead";
-            } else if(commandIndex >= commands.size()){
-                log_str = "No more commands";
-            } else if(turnDepth > BattleAiController.maxTurnCount){
-                log_str = "Max turn count reached";
-            } else if (controller.bestEnd != null
-                    && saveState.getPlayerHealth() < controller.bestEnd.saveState.getPlayerHealth()){
-                log_str = "Player health is less than bestEnd";
-            }
-
-            BattleAiController.logger.info("OriCode StateNode.process() - is Done: " + log_str);
-            // log part ===============
-
+                || turnDepth > BattleAiController.maxTurnCount){
+            String log_str = getString();
             isDone = true;
             BattleAiController.curStateNode = parent;
+            BattleAiController.logger.info("OriCode StateNode.process() - " + log_str);
             return;
         }
 
+        //最小生命筛选
+//        if(controller.bestEnd != null
+//           && BattleAiController.curStateNode.saveState.getPlayerHealth() < controller.bestEnd.saveState.getPlayerHealth()){
+//            // 没有吸血的卡
+//            isDone = true;
+//            BattleAiController.curStateNode = parent;
+//            return;
+//        }
+
         if(isBattleOver()){
             isDone = true;
-            BattleAiController.logger.info("OriCode StateNode.process() - Battle is over");
+//            BattleAiController.logger.info("OriCode StateNode.process() - Battle is over");
             // 这个时候需要评估bestEnd, 以及是否需要更新bestEnd, 当前的StateNode 是一个END,是否是bestEnd
             if(controller.bestEnd == null || getStateScore(this) > getStateScore(controller.bestEnd)){
                 controller.bestEnd = this;
             }
             BattleAiController.curStateNode = parent;
+            BattleAiController.logger.info("OriCode StateNode.process() - battle over");
             return;
         }
 
@@ -127,6 +124,25 @@ public class StateNode {
         StateNode child_node = new StateNode(this, toExecute, controller);
         BattleAiController.curStateNode = child_node;
         children.add(child_node);
+    }
+
+    private int getDamage(){
+        return controller.startingHealth - BattleAiController.curStateNode.saveState.getPlayerHealth();
+    }
+
+    private String getString() {
+        String log_str = "";
+        if(saveState.getPlayerHealth() < 1){
+            log_str = "Player is dead";
+        } else if(commandIndex >= commands.size()){
+            log_str = "No more commands";
+        } else if(turnDepth > BattleAiController.maxTurnCount){
+            log_str = "Max turn count reached";
+        } else if (controller.bestEnd != null
+                && saveState.getPlayerHealth() < controller.bestEnd.saveState.getPlayerHealth()){
+            log_str = "Player health is less than bestEnd";
+        }
+        return log_str;
     }
 
     /**
