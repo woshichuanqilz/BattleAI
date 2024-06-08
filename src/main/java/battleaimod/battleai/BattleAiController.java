@@ -2,6 +2,7 @@ package battleaimod.battleai;
 
 import battleaimod.BattleAiMod;
 import battleaimod.GameData.EnemyType;
+import battleaimod.GameData.Two_Louses_Scene;
 import battleaimod.ValueFunctions;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.helpers.GetAllInBattleInstances;
@@ -12,6 +13,7 @@ import savestate.CardState;
 import savestate.SaveState;
 import savestate.SaveStateMod;
 
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
@@ -234,15 +236,19 @@ public class BattleAiController implements Controller {
 //        }
     }
 
-    private void processRefBattle() {
+    private void processRefBattle(){
         String enemyType = getEnemyType();
+        switch (enemyType){
+            case "TWO_LOUSES":
+                Two_Louses_Scene twoLousesScene = new Two_Louses_Scene();
+                twoLousesScene.getMaxDamage(0);
+                break;
+            case "Unknown":
+                break;
+            default:
+                break;
+        }
         // get class by enemyType
-
-
-//        int dmg = getTotalMonsterDamage();
-//        if(AbstractDungeon.player.currentBlock < dmg){
-//            System.out.println("test");
-//        }
 //  这里可以设置socket直接控制client端的战斗
 //        StateNode temp = new StateNode(null, new CardCommand(0, -1, "lizhe"), this);
 //        temp.saveState = new SaveState();
