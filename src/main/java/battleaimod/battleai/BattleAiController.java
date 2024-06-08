@@ -1,6 +1,7 @@
 package battleaimod.battleai;
 
 import battleaimod.BattleAiMod;
+import battleaimod.GameData.EnemyType;
 import battleaimod.ValueFunctions;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.helpers.GetAllInBattleInstances;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static battleaimod.utils.OriUtils.getEnemyType;
 import static battleaimod.utils.OriUtils.getTotalMonsterDamage;
 
 public class BattleAiController implements Controller {
@@ -68,7 +70,8 @@ public class BattleAiController implements Controller {
     // ori
     public static StateNode root;
     public static StateNode curStateNode;
-    public static final int maxTurnCount = 7;
+    public static final int maxTurnCount = 5;
+    private static boolean isRefBattleSet = false;
 
     // 基准线战斗评估是否开始
 //    private boolean is_ref_battle_begin;
@@ -115,6 +118,11 @@ public class BattleAiController implements Controller {
         if(root.isDone()) {
             isDone = true;
             generateMindmap();
+            return;
+        }
+
+        if(!isRefBattleSet){
+            processRefBattle();
             return;
         }
 
@@ -227,11 +235,14 @@ public class BattleAiController implements Controller {
     }
 
     private void processRefBattle() {
-        int dmg = getTotalMonsterDamage();
-        if(AbstractDungeon.player.currentBlock < dmg){
-            System.out.println("test");
-        }
+        String enemyType = getEnemyType();
+        // get class by enemyType
 
+
+//        int dmg = getTotalMonsterDamage();
+//        if(AbstractDungeon.player.currentBlock < dmg){
+//            System.out.println("test");
+//        }
 //  这里可以设置socket直接控制client端的战斗
 //        StateNode temp = new StateNode(null, new CardCommand(0, -1, "lizhe"), this);
 //        temp.saveState = new SaveState();

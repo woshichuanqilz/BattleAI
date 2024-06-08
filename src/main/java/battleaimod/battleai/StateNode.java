@@ -13,6 +13,7 @@ import com.megacrit.cardcrawl.cards.red.Dropkick;
 import com.megacrit.cardcrawl.cards.red.SpotWeakness;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.monsters.AbstractMonster;
+import com.megacrit.cardcrawl.monsters.MonsterGroup;
 import com.megacrit.cardcrawl.rooms.MonsterRoom;
 import com.megacrit.cardcrawl.rooms.MonsterRoomBoss;
 import com.megacrit.cardcrawl.ui.panels.EnergyPanel;
@@ -59,9 +60,38 @@ public class StateNode {
         this.controller = controller;
     }
 
+    private List<Command> getValuableCommands(){
+        // get monsters block
+        ArrayList<AbstractMonster> monsters = AbstractDungeon.getMonsters().monsters;
+        commands = CommandList.getAvailableCommands(null, BattleAiMod.actionHeuristics);
+        for(Command command: commands){
+            if(command instanceof CardCommand){
+                // 如果是单一目标攻击卡,
+                CardCommand cardCommand = (CardCommand) command;
+                AbstractCard card = AbstractDungeon.player.hand.group.get(cardCommand.cardIndex);
+                if(card.target == AbstractCard.CardTarget.ENEMY){
+                    if(cardCommand.monsterIndex > -1){
+                        AbstractMonster monster = monsters.get(cardCommand.monsterIndex);
+                        if(monster != null){
+                            // 如果护甲大于卡牌攻击力
+                        }
+                    }
+                }
+            }
+        }
+
+
+        // 药水
+        if(!(AbstractDungeon.getCurrRoom() instanceof MonsterRoomBoss)){
+            commands.removeIf(command -> command instanceof PotionCommand);
+        }
+
+        return commands;
+    }
+
     public void process(){
         StateNode.process_times ++;
-        if(StateNode.process_times > 1000){
+        if(StateNode.process_times > 10000){
             BattleAiController.root.isDone = true;
             isDone = true;
             return;
@@ -81,14 +111,11 @@ public class StateNode {
 
         if(commands == null){
             commands = CommandList.getAvailableCommands(null, BattleAiMod.actionHeuristics);
-            if(!(AbstractDungeon.getCurrRoom() instanceof MonsterRoomBoss)){
-                // remove PotionCommand from commands
-                commands.removeIf(command -> command instanceof PotionCommand);
-            }
         }
 
         if(saveState.getPlayerHealth() < 1
                 || commandIndex >= commands.size()
+                || getDamage() > 20
                 || turnDepth > BattleAiController.maxTurnCount){
             String log_str = getString();
             isDone = true;
@@ -97,14 +124,14 @@ public class StateNode {
             return;
         }
 
-        //最小生命筛选
-//        if(controller.bestEnd != null
-//           && BattleAiController.curStateNode.saveState.getPlayerHealth() < controller.bestEnd.saveState.getPlayerHealth()){
-//            // 没有吸血的卡
-//            isDone = true;
-//            BattleAiController.curStateNode = parent;
-//            return;
-//        }
+//        最小生命筛选
+        if(controller.bestEnd != null
+           && BattleAiController.curStateNode.saveState.getPlayerHealth() < controller.bestEnd.saveState.getPlayerHealth()){
+            // 没有吸血的卡
+            isDone = true;
+            BattleAiController.curStateNode = parent;
+            return;
+        }
 
         if(isBattleOver()){
             isDone = true;
@@ -118,8 +145,12 @@ public class StateNode {
             return;
         }
 
-        Command toExecute = commands.get(commandIndex);
-        commandIndex ++;
+        Command toExecute;
+        do{
+            toExecute = commands.get(commandIndex);
+            commandIndex ++;
+        }while (toExecute instanceof EndCommand && commands.size() > 1);
+
         toExecute.execute();
         StateNode child_node = new StateNode(this, toExecute, controller);
         BattleAiController.curStateNode = child_node;
